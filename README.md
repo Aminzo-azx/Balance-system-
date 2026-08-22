@@ -33,4 +33,4 @@ A self-balancing platform prototype using an MPU6050 gyroscope/accelerometer and
 - The servo moves opposite to the tilt to stabilize the platform.
 
 ## Author
-Created by [Anas | Αмizσ] — an aspiring mechatronics engineer.# Balance-system-
+Created by [Anes | Αмizσ] — an aspiring mechatronics engineer.# Balance-system-
