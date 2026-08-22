@@ -1,0 +1,68 @@
+#include <Wire.h>
+#include <MPU6050.h>
+#include <Servo.h>
+
+MPU6050 mpu;
+Servo balanceServo;
+
+const int servoPin = 9;
+float targetAngle = 0;     // الزاوية المطلوبة (المستوي)
+
+// معاملات PID
+float Kp = 2.0;
+float Ki = 0.01;
+float Kd = 0.5;
+
+float integral = 0;
+float lastError = 0;
+
+unsigned long previousMillis = 0;
+const long interval = 10; // تحديث كل 10ms
+
+void setup() {
+    Serial.begin(9600);
+    Wire.begin();
+    mpu.initialize();
+    balanceServo.attach(servoPin);
+    balanceServo.write(90);
+    Serial.println("Balancing System Ready");
+}
+
+void loop() {
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - previousMillis >= interval) {
+        previousMillis = currentMillis;
+
+        int16_t ax, ay, az;
+        int16_t gx, gy, gz;
+        mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+        // حساب زاوية الميلان Roll (يمين/يسار)
+        float roll = atan2(ay, az) * 180 / PI;
+
+        // حساب الخطأ
+        float error = targetAngle - roll;
+
+        // PID
+        integral += error * (interval / 1000.0);
+        float derivative = (error - lastError) / (interval / 1000.0);
+        lastError = error;
+
+        float output = Kp * error + Ki * integral + Kd * derivative;
+
+        // تحويل الخرج إلى زاوية سيرفو (التعويض العكسي)
+        int servoAngle = 90 - (int)output;
+        servoAngle = constrain(servoAngle, 0, 180);
+
+        balanceServo.write(servoAngle);
+
+        // عرض القيم
+        Serial.print("Roll: ");
+        Serial.print(roll);
+        Serial.print(" | Error: ");
+        Serial.print(error);
+        Serial.print(" | Servo: ");
+        Serial.println(servoAngle);
+    }
+}
